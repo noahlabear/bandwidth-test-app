@@ -145,6 +145,25 @@
       box-shadow: none;
     }
 
+    .btn-reduce {
+      background: #ef4444;
+      color: #fff;
+      box-shadow: 0 0 0 0 rgba(239,68,68,0);
+    }
+    .btn-reduce:hover {
+      background: #f87171;
+      box-shadow: 0 0 20px rgba(239,68,68,0.4);
+    }
+
+    /* ── Button row ── */
+    .btn-row {
+      display: flex;
+      gap: 0.75rem;
+    }
+    .btn-row .btn {
+      flex: 1;
+    }
+
     /* ── Notification banner ── */
     .banner {
       display: none;
@@ -201,7 +220,7 @@
   <div>
     <h1>Bandwidth Test App</h1>
     <p class="subtitle">
-      Each button press opens a 60-second 1&nbsp;Mbps egress stream.<br>
+      Each button press opens a 10-minute 1&nbsp;Mbps egress stream.<br>
       Prometheus picks up the rate within ~5&nbsp;min → dashboard notification fires at 4&nbsp;Mbps.
     </p>
   </div>
@@ -237,30 +256,34 @@
   <!-- Banner -->
   <div class="banner" id="banner"></div>
 
-  <!-- Button -->
-  <button class="btn" id="btn" onclick="addStream()">+ 1 Mbps</button>
+  <!-- Buttons -->
+  <div class="btn-row">
+    <button class="btn" id="btn" onclick="addStream()">+ 1 Mbps</button>
+    <button class="btn btn-reduce" id="btn-reduce" onclick="reduceStream()" disabled>− 1 Mbps</button>
+  </div>
 
   <!-- Active stream list -->
   <div class="stream-list" id="stream-list"></div>
 </div>
 
 <script>
-  // Track streams: { id, startedAt, endsAt, done }
+  // Track streams: { id, startedAt, endsAt, done, abort }
   const streams = [];
   let nextId = 1;
 
   function addStream() {
     const id = nextId++;
     const startedAt = Date.now();
-    const endsAt = startedAt + 60_000;
-    streams.push({ id, startedAt, endsAt, done: false });
+    const endsAt = startedAt + 600_000; // 10 minutes
+    const abort = new AbortController();
+    streams.push({ id, startedAt, endsAt, done: false, abort });
 
     // Render item immediately
     renderStreamItem(id);
 
     // Fire the actual HTTP stream in the background — browser drains body
     // which forces the server to keep writing, generating real pod egress.
-    fetch('/stream')
+    fetch('/stream', { signal: abort.signal })
       .then(res => {
         // Drain the response body so the server keeps sending
         const reader = res.body.getReader();
@@ -274,6 +297,20 @@
       });
   }
 
+  function reduceStream() {
+    // Abort the most recently started active stream
+    for (let i = streams.length - 1; i >= 0; i--) {
+      const s = streams[i];
+      if (!s.done) {
+        s.done = true;
+        s.abort.abort();
+        break;
+      }
+    }
+    // Immediately refresh the UI rather than waiting for the next tick
+    tick();
+  }
+
   function renderStreamItem(id) {
     const list = document.getElementById('stream-list');
     const el = document.createElement('li');
@@ -281,7 +318,7 @@
     el.className = 'stream-item';
     el.innerHTML = `
       <span class="s-label">Stream #${id} — 1 Mbps</span>
-      <span class="s-timer" id="timer-${id}">60s</span>
+      <span class="s-timer" id="timer-${id}">600s</span>
     `;
     list.prepend(el);
   }
@@ -337,8 +374,9 @@
       banner.textContent = '';
     }
 
-    // Disable button at cap
+    // Disable add button at cap; disable reduce button when no active streams
     document.getElementById('btn').disabled = activeMbps >= 5;
+    document.getElementById('btn-reduce').disabled = activeMbps === 0;
   }
 
   setInterval(tick, 500);

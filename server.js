@@ -9,15 +9,15 @@ const PORT = process.env.PORT || 3000;
 
 // ---------------------------------------------------------------------------
 // Constants
-// Each /stream request sends data at exactly 1 Mbps for 60 seconds.
+// Each /stream request sends data at exactly 1 Mbps for 10 minutes.
 //
 //   1 Mbps = 125,000 bytes/sec
 //   Chunk:  12,500 bytes every 100 ms  →  125,000 bytes/sec = 1 Mbps
-//   Duration: 60 s  (long enough for Prometheus 5m rate to register signal)
+//   Duration: 600 s  (10 minutes — sustained for Prometheus rate windows)
 // ---------------------------------------------------------------------------
-const CHUNK_BYTES       = 12_500;   // bytes per write
-const CHUNK_INTERVAL_MS = 100;      // ms between writes
-const STREAM_DURATION_MS = 60_000; // 60 seconds total per button press
+const CHUNK_BYTES       = 12_500;    // bytes per write
+const CHUNK_INTERVAL_MS = 100;       // ms between writes
+const STREAM_DURATION_MS = 600_000; // 10 minutes total per button press
 
 let activeStreams = 0;
 
