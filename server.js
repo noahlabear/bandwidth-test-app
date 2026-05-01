@@ -31,7 +31,7 @@ app.get('/status', (_req, res) => {
   res.json({ activeStreams });
 });
 
-// ── Stream endpoint ── each call generates 1 Mbps egress for 60 seconds
+// ── Stream endpoint ── each call generates 1 Mbps egress for 10 minutes
 app.get('/stream', (req, res) => {
   activeStreams++;
 

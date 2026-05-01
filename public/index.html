@@ -221,7 +221,7 @@
     <h1>Bandwidth Test App</h1>
     <p class="subtitle">
       Each button press opens a 10-minute 1&nbsp;Mbps egress stream.<br>
-      Prometheus picks up the rate within ~5&nbsp;min → dashboard notification fires at 4&nbsp;Mbps.
+      Prometheus picks up the rate within ~5&nbsp;min → dashboard notification fires at 80&nbsp;Mbps.
     </p>
   </div>
 
@@ -235,8 +235,8 @@
       <div class="bar-track"><div class="bar-fill" id="bar"></div></div>
       <div class="bar-labels">
         <span>0</span>
-        <span>4 Mbps — notify</span>
-        <span>5 Mbps — cap</span>
+        <span>80 Mbps — notify</span>
+        <span>100 Mbps — cap</span>
       </div>
     </div>
   </div>
@@ -249,7 +249,7 @@
     </div>
     <div class="stat">
       <div class="stat-label">Cap remaining</div>
-      <div class="stat-value" id="stat-remaining">5.0 Mbps</div>
+      <div class="stat-value" id="stat-remaining">100.0 Mbps</div>
     </div>
   </div>
 
@@ -347,35 +347,35 @@
     const bar   = document.getElementById('bar');
     gauge.textContent = activeMbps.toFixed(1);
 
-    const pct = Math.min(100, (activeMbps / 5) * 100);
+    const pct = Math.min(100, (activeMbps / 100) * 100);
     bar.style.width = pct + '%';
 
     // Colour coding
-    const warn  = activeMbps >= 4;
-    const alert = activeMbps >= 5;
+    const warn  = activeMbps >= 80;
+    const alert = activeMbps >= 100;
     gauge.className = 'gauge-val' + (alert ? ' alert' : warn ? ' warn' : '');
     bar.className   = 'bar-fill'  + (alert ? ' alert' : warn ? ' warn' : '');
 
     // Stats
     document.getElementById('stat-streams').textContent = activeMbps;
-    const remaining = Math.max(0, 5 - activeMbps);
+    const remaining = Math.max(0, 100 - activeMbps);
     document.getElementById('stat-remaining').textContent = remaining.toFixed(1) + ' Mbps';
 
     // Banner
     const banner = document.getElementById('banner');
     if (alert) {
       banner.className = 'banner alert';
-      banner.textContent = '⚠ At or above the 5 Mbps cap — traffic is being throttled by the CNI plugin.';
+      banner.textContent = '⚠ At or above the 100 Mbps cap — traffic is being throttled by the CNI plugin.';
     } else if (warn) {
       banner.className = 'banner warn';
-      banner.textContent = '⚡ Above 4 Mbps threshold — a dashboard notification will appear within ~5 minutes.';
+      banner.textContent = '⚡ Above 80 Mbps threshold — a dashboard notification will appear within ~5 minutes.';
     } else {
       banner.className = 'banner';
       banner.textContent = '';
     }
 
     // Disable add button at cap; disable reduce button when no active streams
-    document.getElementById('btn').disabled = activeMbps >= 5;
+    document.getElementById('btn').disabled = activeMbps >= 100;
     document.getElementById('btn-reduce').disabled = activeMbps === 0;
   }
 
