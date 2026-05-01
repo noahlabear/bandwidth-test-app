@@ -287,8 +287,8 @@
       .then(res => {
         // Drain the response body so the server keeps sending
         const reader = res.body.getReader();
-        const drain = () => reader.read().then(({ done }) => { if (!done) drain(); });
-        drain();
+        const drain = () => reader.read().then(({ done }) => { if (!done) return drain(); });
+        return drain();
       })
       .catch(() => {})
       .finally(() => {
